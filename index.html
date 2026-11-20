@@ -1,5 +1,385 @@
-Physiology Quest
-Unit 1: ENS structure
-Welcome to the first unit.
--Lesson 1: ENS in the GI wall
--Lesson 2: Two plexus
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Physiology Quest</title>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    background:#f5f7fb;
+    max-width:800px;
+    margin:auto;
+    padding:20px;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.15);
+    margin-top:20px;
+}
+
+button{
+    padding:10px 15px;
+    margin:5px;
+    cursor:pointer;
+}
+
+.correct{
+    color:green;
+    font-weight:bold;
+}
+
+.wrong{
+    color:red;
+    font-weight:bold;
+}
+
+input{
+    padding:10px;
+    width:100%;
+    margin-top:10px;
+}
+
+.hidden{
+    display:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Unit 1: ENS Structure</h1>
+
+<div class="card" id="game"></div>
+
+<script>
+
+let reviewQueue = [];
+
+const activities = [
+
+{
+type:"mcq",
+question:"The ENS is located in which layer(s) of the GI tract wall? Select all that apply.",
+options:[
+"Mucosa",
+"Submucosa",
+"Muscularis externa",
+"Serosa"
+],
+answer:[1,2]
+},
+
+{
+type:"match",
+question:"Match the plexus to its location.",
+items:[
+["Myenteric plexus","Between circular and longitudinal muscle layers of muscularis externa"],
+["Submucosal plexus","Submucosa"]
+]
+},
+
+{
+type:"match",
+question:"Match the plexus to its primary function.",
+items:[
+["Myenteric plexus","Motility"],
+["Submucosal plexus","Secretion and local blood flow"]
+],
+popup:true
+},
+
+{
+type:"mcq",
+question:"A newborn has Hirschsprung disease. What is the most likely consequence?",
+options:[
+"Reduced colonic motility causing constipation",
+"Excessive colonic motility causing diarrhea"
+],
+answer:[0]
+},
+
+{
+type:"recall",
+question:"Name of ENS in the muscularis externa",
+accepted:[
+"myenteric plexus",
+"myenteric"
+]
+},
+
+{
+type:"recall",
+question:"Name of ENS in the submucosa",
+accepted:[
+"submucosal plexus",
+"submucosal"
+]
+},
+
+{
+type:"recall",
+question:"Primary activity regulated by the myenteric plexus",
+accepted:[
+"motility"
+]
+},
+
+{
+type:"recall",
+question:"Primary activity regulated by the submucosal plexus",
+accepted:[
+"secretion",
+"secretion and local blood flow",
+"local blood flow and secretion"
+]
+}
+
+];
+
+let current = 0;
+
+function showActivity(){
+
+if(current >= activities.length){
+
+if(reviewQueue.length > 0){
+
+activities.push(reviewQueue.shift());
+
+showActivity();
+return;
+
+}
+
+document.getElementById("game").innerHTML=`
+<h2>✅ Lesson Complete!</h2>
+<p>You mastered the key ENS structure concepts.</p>
+`;
+
+return;
+}
+
+const a = activities[current];
+
+if(a.type==="mcq"){
+
+let html=`
+<h2>Exercise ${current+1}</h2>
+<p>${a.question}</p>
+`;
+
+a.options.forEach((option,i)=>{
+
+html += `
+<label>
+<input type="checkbox" value="${i}">
+${option}
+</label><br>
+`;
+
+});
+
+html += `
+<br>
+<button onclick="checkMCQ()">Submit</button>
+<div id="feedback"></div>
+`;
+
+document.getElementById("game").innerHTML=html;
+}
+
+else if(a.type==="match"){
+
+let html=`<h2>Exercise ${current+1}</h2>
+<p>${a.question}</p>
+`;
+
+a.items.forEach((pair,index)=>{
+
+html += `
+<p><strong>${pair[0]}</strong></p>
+
+<select id="match${index}">
+<option value="">Choose</option>
+`;
+
+a.items.forEach(p=>{
+
+html += `<option>${p[1]}</option>`;
+
+});
+
+html += `
+</select>
+`;
+
+});
+
+html += `
+<br><br>
+<button onclick="checkMatch()">Submit</button>
+<div id="feedback"></div>
+`;
+
+document.getElementById("game").innerHTML=html;
+}
+
+else if(a.type==="recall"){
+
+document.getElementById("game").innerHTML=`
+<h2>Quick Recall</h2>
+
+<p>${a.question}</p>
+
+<input id="answerBox">
+
+<br><br>
+
+<button onclick="checkRecall()">Submit</button>
+
+<div id="feedback"></div>
+`;
+}
+
+}
+
+function checkMCQ(){
+
+let checked=[];
+
+document.querySelectorAll('input[type=checkbox]').forEach(box=>{
+
+if(box.checked) checked.push(parseInt(box.value));
+
+});
+
+let expected=[...activities[current].answer].sort().join();
+
+let actual=[...checked].sort().join();
+
+if(expected===actual){
+
+document.getElementById("feedback").innerHTML=
+'<p class="correct">✅ Correct!</p>';
+
+setTimeout(nextActivity,1000);
+}
+
+else{
+
+document.getElementById("feedback").innerHTML=
+'<p class="wrong">❌ Try again later.</p>';
+
+reviewQueue.push(activities[current]);
+
+setTimeout(nextActivity,1000);
+}
+
+}
+
+function checkMatch(){
+
+let correct=true;
+
+activities[current].items.forEach((pair,index)=>{
+
+let value=document.getElementById(`match${index}`).value;
+
+if(value!==pair[1]) correct=false;
+
+});
+
+if(correct){
+
+document.getElementById("feedback").innerHTML=
+'<p class="correct">✅ Correct!</p>';
+
+if(activities[current].popup){
+
+setTimeout(()=>{
+
+alert(
+"Myenteric → M → Motility\n\nSubmucosal → S → Secretion (+ local blood flow)"
+);
+
+nextActivity();
+
+},1000);
+
+}
+
+else{
+
+setTimeout(nextActivity,1000);
+
+}
+
+}
+
+else{
+
+document.getElementById("feedback").innerHTML=
+'<p class="wrong">❌ Try again later.</p>';
+
+reviewQueue.push(activities[current]);
+
+setTimeout(nextActivity,1000);
+
+}
+
+}
+
+function checkRecall(){
+
+let user=document
+.getElementById("answerBox")
+.value
+.trim()
+.toLowerCase();
+
+let accepted=
+activities[current].accepted;
+
+if(accepted.includes(user)){
+
+document.getElementById("feedback").innerHTML=
+'<p class="correct">✅ Correct!</p>';
+
+setTimeout(nextActivity,1000);
+
+}
+
+else{
+
+document.getElementById("feedback").innerHTML=
+'<p class="wrong">❌ Incorrect.</p>';
+
+reviewQueue.push(activities[current]);
+
+setTimeout(nextActivity,1000);
+
+}
+
+}
+
+function nextActivity(){
+
+current++;
+
+showActivity();
+
+}
+
+showActivity();
+
+</script>
+
+</body>
+</html>
