@@ -7,8 +7,8 @@
 <style>
 
 body{
-    font-family: Arial, sans-serif;
-    background:#f7f7fb;
+    font-family:Arial,sans-serif;
+    background:#f5f7fb;
     max-width:900px;
     margin:auto;
     padding:20px;
@@ -16,19 +16,31 @@ body{
 
 .card{
     background:white;
-    border-radius:16px;
+    border-radius:20px;
     padding:25px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    box-shadow:0 2px 10px rgba(0,0,0,0.12);
 }
 
-h1,h2,h3{
-    color:#333;
+.progress{
+    width:100%;
+    height:18px;
+    background:#ddd;
+    border-radius:20px;
+    overflow:hidden;
+    margin-bottom:20px;
+}
+
+.progress-fill{
+    height:100%;
+    background:#58cc02;
+    width:0%;
+    transition:0.4s;
 }
 
 button{
-    padding:12px;
+    padding:12px 18px;
     border:none;
-    border-radius:10px;
+    border-radius:12px;
     cursor:pointer;
     margin-top:10px;
 }
@@ -41,12 +53,13 @@ button{
 .option{
     display:block;
     width:100%;
-    text-align:left;
-    margin:8px 0;
     padding:12px;
+    margin-top:10px;
+    border-radius:12px;
     border:1px solid #ccc;
-    border-radius:10px;
     background:white;
+    text-align:left;
+    cursor:pointer;
 }
 
 .green{
@@ -57,47 +70,95 @@ button{
     background:#ffd8d8 !important;
 }
 
+.center{
+    text-align:center;
+}
+
 .match-grid{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:10px;
-    margin-top:15px;
+    gap:12px;
+    margin-top:20px;
 }
 
 .match-card{
-    border:1px solid #ccc;
-    border-radius:10px;
     padding:15px;
+    border:2px solid #ccc;
+    border-radius:12px;
     cursor:pointer;
-    text-align:center;
+    transition:0.2s;
     background:white;
+    text-align:center;
 }
 
-.selected{
+.match-card.selected{
+    background:#d4f8d4;
+    border:3px solid #58cc02;
+    transform:scale(1.08);
+}
+
+.match-card.correct{
+    background:#d4f8d4;
     border:3px solid #58cc02;
 }
 
-.hidden{
-    display:none;
+.match-card.wrong{
+    background:#ffd8d8;
+    border:3px solid red;
 }
 
-.feedback{
-    margin-top:15px;
-    font-weight:bold;
-}
-
-input{
+input[type=text]{
     width:100%;
     padding:12px;
-    font-size:16px;
+    margin-top:10px;
+    border-radius:12px;
+    border:1px solid #ccc;
 }
 
-.flashcard{
-    min-height:150px;
+.flash-wrap{
+    perspective:1000px;
 }
 
-.center{
-    text-align:center;
+.flash-inner{
+    position:relative;
+    width:100%;
+    min-height:250px;
+    transition:transform 0.7s;
+    transform-style:preserve-3d;
+}
+
+.flash-inner.flipped{
+    transform:rotateY(180deg);
+}
+
+.flash-front,
+.flash-back{
+
+    position:absolute;
+    width:100%;
+    min-height:250px;
+
+    backface-visibility:hidden;
+
+    border-radius:20px;
+    padding:25px;
+    box-sizing:border-box;
+}
+
+.flash-front{
+    background:white;
+}
+
+.flash-back{
+    transform:rotateY(180deg);
+}
+
+.flash-back.correct{
+    background:#d4f8d4;
+}
+
+.flash-back.wrong{
+    background:#ffd8d8;
 }
 
 </style>
@@ -109,12 +170,30 @@ input{
 
 <script>
 
-let lessonStep=0;
+const TOTAL_STEPS = 8;
+
+let step=0;
 let attempts=0;
+let selected=null;
+let matches=0;
 
 const app=document.getElementById("app");
 
-function introPage(){
+function progressBar(){
+
+let percent=(step/TOTAL_STEPS)*100;
+
+return `
+<div class="progress">
+<div class="progress-fill"
+style="width:${percent}%">
+</div>
+</div>
+`;
+
+}
+
+function startPage(){
 
 app.innerHTML=`
 
@@ -125,12 +204,17 @@ app.innerHTML=`
 <h3>Lesson 1: Location and Function of ENS</h3>
 
 <p>
+
 Learn the location of the enteric nervous system,
 the two plexuses and their primary functions.
+
 </p>
 
-<button class="primary" onclick="next()">
+<button class="primary"
+onclick="nextStep()">
+
 Start Lesson
+
 </button>
 
 </div>
@@ -139,15 +223,17 @@ Start Lesson
 
 }
 
-function next(){
-lessonStep++;
+function nextStep(){
+
+step++;
 attempts=0;
 render();
+
 }
 
 function render(){
 
-switch(lessonStep){
+switch(step){
 
 case 1:
 exercise1();
@@ -166,57 +252,63 @@ exercise4();
 break;
 
 case 5:
-flashCard1();
+flashCard(
+"Name the ENS in the muscularis externa",
+["myenteric plexus","myenteric"],
+6
+);
 break;
 
 case 6:
-flashCard2();
+flashCard(
+"Name the ENS in the submucosa",
+["submucosal plexus","submucosal"],
+7
+);
 break;
 
 case 7:
-flashCard3();
+flashCard(
+"Primary activity in the GI tract regulated by the myenteric plexus",
+["motility"],
+8
+);
 break;
 
 case 8:
-flashCard4();
+flashCard(
+"Primary activity in the GI tract regulated by the submucosal plexus",
+[
+"secretion and local blood flow",
+"local blood flow and secretion",
+"secretion"
+],
+9
+);
 break;
 
 default:
-completed();
+finish();
 
 }
 
 }
 
-function correctScreen(callback,text="Correct!"){
+function correctNext(){
 
 app.innerHTML=`
+
+${progressBar()}
 
 <div class="card green center">
 
-<h2>✅ ${text}</h2>
+<h2>✅ Correct</h2>
 
 </div>
 
 `;
 
-setTimeout(callback,1200);
-
-}
-
-function wrongScreen(callback){
-
-app.innerHTML=`
-
-<div class="card red center">
-
-<h2>❌ Try Again</h2>
-
-</div>
-
-`;
-
-setTimeout(callback,1200);
+setTimeout(nextStep,1000);
 
 }
 
@@ -224,38 +316,46 @@ function exercise1(){
 
 app.innerHTML=`
 
+${progressBar()}
+
 <div class="card">
 
 <h2>Exercise 1</h2>
 
 <p>
+
 The ENS is located in which layer of the wall
 of the GI tract?
-Select all that apply.
-</p>
 
-<label>
-<input type="checkbox" value="muc">
-Mucosa
-</label><br>
+Select all that apply.
+
+</p>
 
 <label>
 <input type="checkbox" value="sub">
 Submucosa
-</label><br>
+</label><br><br>
 
 <label>
 <input type="checkbox" value="mus">
 Muscularis externa
-</label><br>
+</label><br><br>
+
+<label>
+<input type="checkbox" value="muc">
+Mucosa
+</label><br><br>
 
 <label>
 <input type="checkbox" value="ser">
 Serosa
-</label><br>
+</label><br><br>
 
-<button class="primary" onclick="checkExercise1()">
+<button class="primary"
+onclick="checkEx1()">
+
 Submit
+
 </button>
 
 </div>
@@ -264,47 +364,60 @@ Submit
 
 }
 
-function checkExercise1(){
+function checkEx1(){
 
-const checked=[...document.querySelectorAll("input[type=checkbox]:checked")]
-.map(x=>x.value);
+let checked=
+[...document.querySelectorAll("input[type=checkbox]:checked")]
+.map(c=>c.value);
 
-const correct=
+let correct=
 checked.length===2 &&
 checked.includes("sub") &&
 checked.includes("mus");
 
 if(correct){
 
-correctScreen(next);
+correctNext();
 
 }else{
 
 attempts++;
 
-if(attempts<2){
+if(attempts===1){
 
-wrongScreen(exercise1);
+app.querySelector(".card").classList.add("red");
+
+setTimeout(exercise1,1000);
 
 }else{
 
 app.innerHTML=`
 
-<div class="card">
+${progressBar()}
+
+<div class="card red">
 
 <h2>Answer</h2>
 
 <p>
+
 The ENS is located within:
+
 </p>
 
 <ul>
+
 <li>Submucosa</li>
+
 <li>Muscularis externa</li>
+
 </ul>
 
-<button class="primary" onclick="next()">
+<button class="primary"
+onclick="nextStep()">
+
 Continue
+
 </button>
 
 </div>
@@ -317,43 +430,65 @@ Continue
 
 }
 
-let selected=null;
-
 function exercise2(){
 
+selected=null;
+matches=0;
+
 app.innerHTML=`
+
+${progressBar()}
 
 <div class="card">
 
 <h2>Exercise 2</h2>
 
 <p>
+
 The ENS can be divided into two:
 myenteric plexus and submucosal plexus.
+
 </p>
 
 <p>
+
 Match the plexus to the correct location.
-Click one item from the left and then
-its matching item on the right.
+
 </p>
 
 <div class="match-grid">
 
-<div class="match-card" onclick="choose('myenteric')">
+<div id="myenteric"
+class="match-card"
+onclick="pickLeft(this,'myenteric')">
+
 Myenteric plexus
+
 </div>
 
-<div class="match-card" onclick="matchCheck('muscularis')">
-Between circular and longitudinal muscle layers of muscularis externa
+<div id="muscularis"
+class="match-card"
+onclick="matchLocation(this,'muscularis')">
+
+Between circular and longitudinal layers
+of muscularis externa
+
 </div>
 
-<div class="match-card" onclick="choose('submucosal')">
+<div id="submucosal"
+class="match-card"
+onclick="pickLeft(this,'submucosal')">
+
 Submucosal plexus
+
 </div>
 
-<div class="match-card" onclick="matchCheck('submucosa')">
+<div id="submucosa"
+class="match-card"
+onclick="matchLocation(this,'submucosa')">
+
 Submucosa
+
 </div>
 
 </div>
@@ -362,56 +497,85 @@ Submucosa
 
 `;
 
-selected=null;
+}
 
-window.matchs=0;
+function pickLeft(card,value){
+
+document
+.querySelectorAll(".match-card")
+.forEach(c=>c.classList.remove("selected"));
+
+card.classList.add("selected");
+
+selected=value;
 
 }
 
-function choose(item){
-selected=item;
-}
+function matchLocation(card,target){
 
-function matchCheck(target){
+if(!selected) return;
 
-const correct=
+let correct=
+
 (selected==="myenteric" && target==="muscularis")
 ||
 (selected==="submucosal" && target==="submucosa");
 
+let left=document.getElementById(selected);
+
 if(correct){
 
-window.matchs++;
+left.classList.remove("selected");
 
-if(window.matchs===2){
+left.classList.add("correct");
 
-correctScreen(next);
+card.classList.add("correct");
+
+selected=null;
+
+matches++;
+
+if(matches===2){
+
+setTimeout(correctNext,700);
 
 }
 
 }else{
 
+card.classList.add("wrong");
+
 attempts++;
 
-if(attempts<2){
+setTimeout(()=>{
 
-wrongScreen(exercise2);
+if(attempts===1){
+
+exercise2();
 
 }else{
 
 app.innerHTML=`
 
-<div class="card">
+${progressBar()}
 
-<h2>Correct Answer</h2>
+<div class="card red">
+
+<h3>Correct Answer</h3>
 
 <ul>
+
 <li>Myenteric plexus → Muscularis externa</li>
+
 <li>Submucosal plexus → Submucosa</li>
+
 </ul>
 
-<button class="primary" onclick="next()">
+<button class="primary"
+onclick="nextStep()">
+
 Continue
+
 </button>
 
 </div>
@@ -419,6 +583,8 @@ Continue
 `;
 
 }
+
+},800);
 
 }
 
@@ -426,34 +592,57 @@ Continue
 
 function exercise3(){
 
+selected=null;
+matches=0;
+
 app.innerHTML=`
+
+${progressBar()}
 
 <div class="card">
 
 <h2>Exercise 3</h2>
 
 <p>
-Each plexus regulates a certain activity of the GI tract.
+
+Each plexus regulates a certain activity
+of the GI tract.
+
 Match the plexus to the primary activity
 that they regulate.
+
 </p>
 
 <div class="match-grid">
 
-<div class="match-card" onclick="choose('myenteric')">
+<div class="match-card"
+id="myenteric"
+onclick="pickLeft(this,'myenteric')">
+
 Myenteric plexus
+
 </div>
 
-<div class="match-card" onclick="matchFunction('motility')">
+<div class="match-card"
+onclick="matchFunction(this,'motility')">
+
 Motility
+
 </div>
 
-<div class="match-card" onclick="choose('submucosal')">
+<div class="match-card"
+id="submucosal"
+onclick="pickLeft(this,'submucosal')">
+
 Submucosal plexus
+
 </div>
 
-<div class="match-card" onclick="matchFunction('secret')">
+<div class="match-card"
+onclick="matchFunction(this,'secretion')">
+
 Secretion and local blood flow
+
 </div>
 
 </div>
@@ -462,25 +651,39 @@ Secretion and local blood flow
 
 `;
 
-selected=null;
-window.matchs=0;
-
 }
 
-function matchFunction(answer){
+function matchFunction(card,value){
 
-const correct=
-(selected==="myenteric" && answer==="motility")
+if(!selected) return;
+
+let correct=
+
+(selected==="myenteric" && value==="motility")
 ||
-(selected==="submucosal" && answer==="secret");
+(selected==="submucosal" && value==="secretion");
+
+let left=document.getElementById(selected);
 
 if(correct){
 
-window.matchs++;
+left.classList.remove("selected");
 
-if(window.matchs===2){
+left.classList.add("correct");
+
+card.classList.add("correct");
+
+matches++;
+
+selected=null;
+
+if(matches===2){
+
+setTimeout(()=>{
 
 app.innerHTML=`
+
+${progressBar()}
 
 <div class="card green">
 
@@ -489,45 +692,72 @@ app.innerHTML=`
 <h3>Useful mnemonic</h3>
 
 <p>
-<b>M</b>yenteric → <b>M</b>otility
+
+<b>M</b>yenteric
+→
+<b>M</b>otility
+
 </p>
 
 <p>
-<b>S</b>ubmucosal → <b>S</b>ecretion
+
+<b>S</b>ubmucosal
+→
+<b>S</b>ecretion
+
 (and local blood flow)
+
 </p>
 
-<button class="primary" onclick="next()">
+<button class="primary"
+onclick="nextStep()">
+
 Continue
+
 </button>
 
 </div>
 
 `;
 
+},700);
+
 }
 
 }else{
 
+card.classList.add("wrong");
+
 attempts++;
 
-if(attempts<2){
+setTimeout(()=>{
 
-wrongScreen(exercise3);
+if(attempts===1){
+
+exercise3();
 
 }else{
 
 app.innerHTML=`
 
-<div class="card">
+${progressBar()}
+
+<div class="card red">
 
 <ul>
+
 <li>Myenteric plexus → Motility</li>
-<li>Submucosal plexus → Secretion and local blood flow</li>
+
+<li>Submucosal plexus → Secretion
+and local blood flow</li>
+
 </ul>
 
-<button class="primary" onclick="next()">
+<button class="primary"
+onclick="nextStep()">
+
 Continue
+
 </button>
 
 </div>
@@ -535,6 +765,8 @@ Continue
 `;
 
 }
+
+},800);
 
 }
 
@@ -544,28 +776,37 @@ function exercise4(){
 
 app.innerHTML=`
 
+${progressBar()}
+
 <div class="card">
 
 <h2>Exercise 4</h2>
 
 <p>
-Hirschsprung disease (congenital aganglionic megacolon).
-Aganglionic means absence of ganglion cells
-in the colon.
-</p>
 
-<p>
+Hirschsprung disease
+(congenital aganglionic megacolon).
+
+Aganglionic means absence of ganglion cells
+in the large intestine (colon).
+
 What is expected to happen?
+
 </p>
 
 <button class="option"
 onclick="hirsch(true)">
-Reduced colonic motility causing constipation
+
+Reduced colonic motility causing
+functional obstruction and constipation
+
 </button>
 
 <button class="option"
 onclick="hirsch(false)">
-Excessive colonic motility causing diarrhea
+
+Excessive colonic motility causing diarrhoea
+
 </button>
 
 </div>
@@ -578,30 +819,40 @@ function hirsch(correct){
 
 if(correct){
 
-correctScreen(next);
+correctNext();
 
 }else{
 
 attempts++;
 
-if(attempts<2){
+if(attempts===1){
 
-wrongScreen(exercise4);
+app.querySelector(".card").classList.add("red");
+
+setTimeout(exercise4,1000);
 
 }else{
 
 app.innerHTML=`
 
-<div class="card">
+${progressBar()}
 
-<h3>Answer</h3>
+<div class="card red">
+
+<h2>Answer</h2>
 
 <p>
-Reduced colonic motility causing constipation.
+
+Reduced colonic motility causing
+functional obstruction and constipation.
+
 </p>
 
-<button class="primary" onclick="next()">
+<button class="primary"
+onclick="nextStep()">
+
 Continue
+
 </button>
 
 </div>
@@ -614,22 +865,39 @@ Continue
 
 }
 
-function flashTemplate(question,answers,nextStep){
+function flashCard(question,answers,nextPosition){
 
 app.innerHTML=`
 
-<div class="card flashcard">
+${progressBar()}
+
+<div class="flash-wrap">
+
+<div class="flash-inner" id="flash">
+
+<div class="flash-front card">
 
 <h2>Quick Recall</h2>
 
 <p>${question}</p>
 
-<input id="ans">
+<input id="flashInput" type="text">
 
 <button class="primary"
-onclick="checkRecall(${JSON.stringify(answers).replace(/"/g,'&quot;')},${nextStep})">
+onclick='submitFlash(${JSON.stringify(answers)},${nextPosition})'>
+
 Submit
+
 </button>
+
+</div>
+
+<div class="flash-back card"
+id="backCard">
+
+</div>
+
+</div>
 
 </div>
 
@@ -637,88 +905,97 @@ Submit
 
 }
 
-function checkRecall(answers,nextStep){
+function submitFlash(answers,nextPosition){
 
-let val=
-document.getElementById("ans")
+const flash=document.getElementById("flash");
+
+const back=document.getElementById("backCard");
+
+const ans=document
+.getElementById("flashInput")
 .value
 .trim()
 .toLowerCase();
 
-if(answers.includes(val)){
+if(answers.includes(ans)){
 
-lessonStep=nextStep;
+back.className="flash-back card correct";
 
-correctScreen(render);
+back.innerHTML=`
 
-}else{
-
-app.querySelector(".card").classList.add("red");
-
-setTimeout(()=>{
-
-app.innerHTML=`
-
-<div class="card">
-
-<p><b>Correct answer:</b></p>
+<h2>✅ Correct</h2>
 
 <p>${answers[0]}</p>
 
-<button class="primary" onclick="
-lessonStep=${nextStep};
-render();
-">
-Continue
-</button>
+<button class="primary"
+onclick="step=${nextPosition};render();">
 
-</div>
+Next Card
+
+</button>
 
 `;
 
-},1000);
+flash.classList.add("flipped");
+
+}
+
+else{
+
+attempts++;
+
+if(attempts===1){
+
+back.className="flash-back card wrong";
+
+back.innerHTML=`
+
+<h2>❌ Wrong</h2>
+
+<p>Try again.</p>
+
+`;
+
+flash.classList.add("flipped");
+
+setTimeout(()=>{
+
+flash.classList.remove("flipped");
+
+},1500);
+
+}
+
+else{
+
+back.className="flash-back card wrong";
+
+back.innerHTML=`
+
+<h2>❌ Wrong</h2>
+
+<p>Correct answer:</p>
+
+<h3>${answers[0]}</h3>
+
+<button class="primary"
+onclick="step=${nextPosition};render();">
+
+Next Card
+
+</button>
+
+`;
+
+flash.classList.add("flipped");
 
 }
 
 }
 
-function flashCard1(){
-flashTemplate(
-"Name of ENS in the muscularis externa",
-["myenteric plexus","myenteric"],
-6
-);
 }
 
-function flashCard2(){
-flashTemplate(
-"Name of ENS in the submucosa",
-["submucosal plexus","submucosal"],
-7
-);
-}
-
-function flashCard3(){
-flashTemplate(
-"Primary activity regulated by the myenteric plexus",
-["motility"],
-8
-);
-}
-
-function flashCard4(){
-flashTemplate(
-"Primary activity regulated by the submucosal plexus",
-[
-"secretion and local blood flow",
-"local blood flow and secretion",
-"secretion"
-],
-9
-);
-}
-
-function completed(){
+function finish(){
 
 app.innerHTML=`
 
@@ -727,13 +1004,17 @@ app.innerHTML=`
 <h1>🏆 Lesson Complete</h1>
 
 <p>
-You have mastered the basic structure and function
-of the ENS.
+
+You have mastered the basic structure
+and function of the ENS.
+
 </p>
 
 <p>
+
 Next lesson:
 Neuron Types of the ENS
+
 </p>
 
 </div>
@@ -742,7 +1023,7 @@ Neuron Types of the ENS
 
 }
 
-introPage();
+startPage();
 
 </script>
 
