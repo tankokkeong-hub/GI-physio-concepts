@@ -8,376 +8,741 @@
 
 body{
     font-family: Arial, sans-serif;
-    background:#f5f7fb;
-    max-width:800px;
+    background:#f7f7fb;
+    max-width:900px;
     margin:auto;
     padding:20px;
 }
 
 .card{
     background:white;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.15);
-    margin-top:20px;
+    border-radius:16px;
+    padding:25px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+h1,h2,h3{
+    color:#333;
 }
 
 button{
-    padding:10px 15px;
-    margin:5px;
+    padding:12px;
+    border:none;
+    border-radius:10px;
     cursor:pointer;
-}
-
-.correct{
-    color:green;
-    font-weight:bold;
-}
-
-.wrong{
-    color:red;
-    font-weight:bold;
-}
-
-input{
-    padding:10px;
-    width:100%;
     margin-top:10px;
+}
+
+.primary{
+    background:#58cc02;
+    color:white;
+}
+
+.option{
+    display:block;
+    width:100%;
+    text-align:left;
+    margin:8px 0;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:10px;
+    background:white;
+}
+
+.green{
+    background:#d4f8d4 !important;
+}
+
+.red{
+    background:#ffd8d8 !important;
+}
+
+.match-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:15px;
+}
+
+.match-card{
+    border:1px solid #ccc;
+    border-radius:10px;
+    padding:15px;
+    cursor:pointer;
+    text-align:center;
+    background:white;
+}
+
+.selected{
+    border:3px solid #58cc02;
 }
 
 .hidden{
     display:none;
 }
 
-</style>
+.feedback{
+    margin-top:15px;
+    font-weight:bold;
+}
 
+input{
+    width:100%;
+    padding:12px;
+    font-size:16px;
+}
+
+.flashcard{
+    min-height:150px;
+}
+
+.center{
+    text-align:center;
+}
+
+</style>
 </head>
 
 <body>
 
-<h1>Unit 1: ENS Structure</h1>
-
-<div class="card" id="game"></div>
+<div id="app"></div>
 
 <script>
 
-let reviewQueue = [];
+let lessonStep=0;
+let attempts=0;
 
-const activities = [
+const app=document.getElementById("app");
 
-{
-type:"mcq",
-question:"The ENS is located in which layer(s) of the GI tract wall? Select all that apply.",
-options:[
-"Mucosa",
-"Submucosa",
-"Muscularis externa",
-"Serosa"
-],
-answer:[1,2]
-},
+function introPage(){
 
-{
-type:"match",
-question:"Match the plexus to its location.",
-items:[
-["Myenteric plexus","Between circular and longitudinal muscle layers of muscularis externa"],
-["Submucosal plexus","Submucosa"]
-]
-},
+app.innerHTML=`
 
-{
-type:"match",
-question:"Match the plexus to its primary function.",
-items:[
-["Myenteric plexus","Motility"],
-["Submucosal plexus","Secretion and local blood flow"]
-],
-popup:true
-},
+<div class="card">
 
-{
-type:"mcq",
-question:"A newborn has Hirschsprung disease. What is the most likely consequence?",
-options:[
-"Reduced colonic motility causing constipation",
-"Excessive colonic motility causing diarrhea"
-],
-answer:[0]
-},
+<h1>Unit 1: ENS Structure</h1>
 
-{
-type:"recall",
-question:"Name of ENS in the muscularis externa",
-accepted:[
-"myenteric plexus",
-"myenteric"
-]
-},
+<h3>Lesson 1: Location and Function of ENS</h3>
 
-{
-type:"recall",
-question:"Name of ENS in the submucosa",
-accepted:[
-"submucosal plexus",
-"submucosal"
-]
-},
+<p>
+Learn the location of the enteric nervous system,
+the two plexuses and their primary functions.
+</p>
 
-{
-type:"recall",
-question:"Primary activity regulated by the myenteric plexus",
-accepted:[
-"motility"
-]
-},
+<button class="primary" onclick="next()">
+Start Lesson
+</button>
 
-{
-type:"recall",
-question:"Primary activity regulated by the submucosal plexus",
-accepted:[
-"secretion",
-"secretion and local blood flow",
-"local blood flow and secretion"
-]
-}
+</div>
 
-];
-
-let current = 0;
-
-function showActivity(){
-
-if(current >= activities.length){
-
-if(reviewQueue.length > 0){
-
-activities.push(reviewQueue.shift());
-
-showActivity();
-return;
-
-}
-
-document.getElementById("game").innerHTML=`
-<h2>✅ Lesson Complete!</h2>
-<p>You mastered the key ENS structure concepts.</p>
 `;
 
-return;
 }
 
-const a = activities[current];
+function next(){
+lessonStep++;
+attempts=0;
+render();
+}
 
-if(a.type==="mcq"){
+function render(){
 
-let html=`
-<h2>Exercise ${current+1}</h2>
-<p>${a.question}</p>
+switch(lessonStep){
+
+case 1:
+exercise1();
+break;
+
+case 2:
+exercise2();
+break;
+
+case 3:
+exercise3();
+break;
+
+case 4:
+exercise4();
+break;
+
+case 5:
+flashCard1();
+break;
+
+case 6:
+flashCard2();
+break;
+
+case 7:
+flashCard3();
+break;
+
+case 8:
+flashCard4();
+break;
+
+default:
+completed();
+
+}
+
+}
+
+function correctScreen(callback,text="Correct!"){
+
+app.innerHTML=`
+
+<div class="card green center">
+
+<h2>✅ ${text}</h2>
+
+</div>
+
 `;
 
-a.options.forEach((option,i)=>{
+setTimeout(callback,1200);
 
-html += `
+}
+
+function wrongScreen(callback){
+
+app.innerHTML=`
+
+<div class="card red center">
+
+<h2>❌ Try Again</h2>
+
+</div>
+
+`;
+
+setTimeout(callback,1200);
+
+}
+
+function exercise1(){
+
+app.innerHTML=`
+
+<div class="card">
+
+<h2>Exercise 1</h2>
+
+<p>
+The ENS is located in which layer of the wall
+of the GI tract?
+Select all that apply.
+</p>
+
 <label>
-<input type="checkbox" value="${i}">
-${option}
+<input type="checkbox" value="sub">
+Submucosa
 </label><br>
+
+<label>
+<input type="checkbox" value="mus">
+Muscularis externa
+</label><br>
+
+<label>
+<input type="checkbox" value="muc">
+Mucosa
+</label><br>
+
+<label>
+<input type="checkbox" value="ser">
+Serosa
+</label><br>
+
+<button class="primary" onclick="checkExercise1()">
+Submit
+</button>
+
+</div>
+
 `;
-
-});
-
-html += `
-<br>
-<button onclick="checkMCQ()">Submit</button>
-<div id="feedback"></div>
-`;
-
-document.getElementById("game").innerHTML=html;
-}
-
-else if(a.type==="match"){
-
-let html=`<h2>Exercise ${current+1}</h2>
-<p>${a.question}</p>
-`;
-
-a.items.forEach((pair,index)=>{
-
-html += `
-<p><strong>${pair[0]}</strong></p>
-
-<select id="match${index}">
-<option value="">Choose</option>
-`;
-
-a.items.forEach(p=>{
-
-html += `<option>${p[1]}</option>`;
-
-});
-
-html += `
-</select>
-`;
-
-});
-
-html += `
-<br><br>
-<button onclick="checkMatch()">Submit</button>
-<div id="feedback"></div>
-`;
-
-document.getElementById("game").innerHTML=html;
-}
-
-else if(a.type==="recall"){
-
-document.getElementById("game").innerHTML=`
-<h2>Quick Recall</h2>
-
-<p>${a.question}</p>
-
-<input id="answerBox">
-
-<br><br>
-
-<button onclick="checkRecall()">Submit</button>
-
-<div id="feedback"></div>
-`;
-}
 
 }
 
-function checkMCQ(){
+function checkExercise1(){
 
-let checked=[];
+const checked=[...document.querySelectorAll("input[type=checkbox]:checked")]
+.map(x=>x.value);
 
-document.querySelectorAll('input[type=checkbox]').forEach(box=>{
-
-if(box.checked) checked.push(parseInt(box.value));
-
-});
-
-let expected=[...activities[current].answer].sort().join();
-
-let actual=[...checked].sort().join();
-
-if(expected===actual){
-
-document.getElementById("feedback").innerHTML=
-'<p class="correct">✅ Correct!</p>';
-
-setTimeout(nextActivity,1000);
-}
-
-else{
-
-document.getElementById("feedback").innerHTML=
-'<p class="wrong">❌ Try again later.</p>';
-
-reviewQueue.push(activities[current]);
-
-setTimeout(nextActivity,1000);
-}
-
-}
-
-function checkMatch(){
-
-let correct=true;
-
-activities[current].items.forEach((pair,index)=>{
-
-let value=document.getElementById(`match${index}`).value;
-
-if(value!==pair[1]) correct=false;
-
-});
+const correct=
+checked.length===2 &&
+checked.includes("sub") &&
+checked.includes("mus");
 
 if(correct){
 
-document.getElementById("feedback").innerHTML=
-'<p class="correct">✅ Correct!</p>';
+correctScreen(next);
 
-if(activities[current].popup){
+}else{
+
+attempts++;
+
+if(attempts<2){
+
+wrongScreen(exercise1);
+
+}else{
+
+app.innerHTML=`
+
+<div class="card">
+
+<h2>Answer</h2>
+
+<p>
+The ENS is located within:
+</p>
+
+<ul>
+<li>Submucosa</li>
+<li>Muscularis externa</li>
+</ul>
+
+<button class="primary" onclick="next()">
+Continue
+</button>
+
+</div>
+
+`;
+
+}
+
+}
+
+}
+
+let selected=null;
+
+function exercise2(){
+
+app.innerHTML=`
+
+<div class="card">
+
+<h2>Exercise 2</h2>
+
+<p>
+The ENS can be divided into two:
+myenteric plexus and submucosal plexus.
+</p>
+
+<p>
+Match the plexus to the correct location.
+Click one item from the left and then
+its matching item on the right.
+</p>
+
+<div class="match-grid">
+
+<div class="match-card" onclick="choose('myenteric')">
+Myenteric plexus
+</div>
+
+<div class="match-card" onclick="matchCheck('muscularis')">
+Between circular and longitudinal muscle layers of muscularis externa
+</div>
+
+<div class="match-card" onclick="choose('submucosal')">
+Submucosal plexus
+</div>
+
+<div class="match-card" onclick="matchCheck('submucosa')">
+Submucosa
+</div>
+
+</div>
+
+</div>
+
+`;
+
+selected=null;
+
+window.matchs=0;
+
+}
+
+function choose(item){
+selected=item;
+}
+
+function matchCheck(target){
+
+const correct=
+(selected==="myenteric" && target==="muscularis")
+||
+(selected==="submucosal" && target==="submucosa");
+
+if(correct){
+
+window.matchs++;
+
+if(window.matchs===2){
+
+correctScreen(next);
+
+}
+
+}else{
+
+attempts++;
+
+if(attempts<2){
+
+wrongScreen(exercise2);
+
+}else{
+
+app.innerHTML=`
+
+<div class="card">
+
+<h2>Correct Answer</h2>
+
+<ul>
+<li>Myenteric plexus → Muscularis externa</li>
+<li>Submucosal plexus → Submucosa</li>
+</ul>
+
+<button class="primary" onclick="next()">
+Continue
+</button>
+
+</div>
+
+`;
+
+}
+
+}
+
+}
+
+function exercise3(){
+
+app.innerHTML=`
+
+<div class="card">
+
+<h2>Exercise 3</h2>
+
+<p>
+Each plexus regulates a certain activity of the GI tract.
+Match the plexus to the primary activity
+that they regulate.
+</p>
+
+<div class="match-grid">
+
+<div class="match-card" onclick="choose('myenteric')">
+Myenteric plexus
+</div>
+
+<div class="match-card" onclick="matchFunction('motility')">
+Motility
+</div>
+
+<div class="match-card" onclick="choose('submucosal')">
+Submucosal plexus
+</div>
+
+<div class="match-card" onclick="matchFunction('secret')">
+Secretion and local blood flow
+</div>
+
+</div>
+
+</div>
+
+`;
+
+selected=null;
+window.matchs=0;
+
+}
+
+function matchFunction(answer){
+
+const correct=
+(selected==="myenteric" && answer==="motility")
+||
+(selected==="submucosal" && answer==="secret");
+
+if(correct){
+
+window.matchs++;
+
+if(window.matchs===2){
+
+app.innerHTML=`
+
+<div class="card green">
+
+<h2>✅ Correct</h2>
+
+<h3>Useful mnemonic</h3>
+
+<p>
+<b>M</b>yenteric → <b>M</b>otility
+</p>
+
+<p>
+<b>S</b>ubmucosal → <b>S</b>ecretion
+(and local blood flow)
+</p>
+
+<button class="primary" onclick="next()">
+Continue
+</button>
+
+</div>
+
+`;
+
+}
+
+}else{
+
+attempts++;
+
+if(attempts<2){
+
+wrongScreen(exercise3);
+
+}else{
+
+app.innerHTML=`
+
+<div class="card">
+
+<ul>
+<li>Myenteric plexus → Motility</li>
+<li>Submucosal plexus → Secretion and local blood flow</li>
+</ul>
+
+<button class="primary" onclick="next()">
+Continue
+</button>
+
+</div>
+
+`;
+
+}
+
+}
+
+}
+
+function exercise4(){
+
+app.innerHTML=`
+
+<div class="card">
+
+<h2>Exercise 4</h2>
+
+<p>
+Hirschsprung disease (congenital aganglionic megacolon).
+Aganglionic means absence of ganglion cells
+in the colon.
+</p>
+
+<p>
+What is expected to happen?
+</p>
+
+<button class="option"
+onclick="hirsch(true)">
+Reduced colonic motility causing constipation
+</button>
+
+<button class="option"
+onclick="hirsch(false)">
+Excessive colonic motility causing diarrhea
+</button>
+
+</div>
+
+`;
+
+}
+
+function hirsch(correct){
+
+if(correct){
+
+correctScreen(next);
+
+}else{
+
+attempts++;
+
+if(attempts<2){
+
+wrongScreen(exercise4);
+
+}else{
+
+app.innerHTML=`
+
+<div class="card">
+
+<h3>Answer</h3>
+
+<p>
+Reduced colonic motility causing constipation.
+</p>
+
+<button class="primary" onclick="next()">
+Continue
+</button>
+
+</div>
+
+`;
+
+}
+
+}
+
+}
+
+function flashTemplate(question,answers,nextStep){
+
+app.innerHTML=`
+
+<div class="card flashcard">
+
+<h2>Quick Recall</h2>
+
+<p>${question}</p>
+
+<input id="ans">
+
+<button class="primary"
+onclick="checkRecall(${JSON.stringify(answers).replace(/"/g,'&quot;')},${nextStep})">
+Submit
+</button>
+
+</div>
+
+`;
+
+}
+
+function checkRecall(answers,nextStep){
+
+let val=
+document.getElementById("ans")
+.value
+.trim()
+.toLowerCase();
+
+if(answers.includes(val)){
+
+lessonStep=nextStep;
+
+correctScreen(render);
+
+}else{
+
+app.querySelector(".card").classList.add("red");
 
 setTimeout(()=>{
 
-alert(
-"Myenteric → M → Motility\n\nSubmucosal → S → Secretion (+ local blood flow)"
-);
+app.innerHTML=`
 
-nextActivity();
+<div class="card">
+
+<p><b>Correct answer:</b></p>
+
+<p>${answers[0]}</p>
+
+<button class="primary" onclick="
+lessonStep=${nextStep};
+render();
+">
+Continue
+</button>
+
+</div>
+
+`;
 
 },1000);
 
 }
 
-else{
+}
 
-setTimeout(nextActivity,1000);
+function flashCard1(){
+flashTemplate(
+"Name of ENS in the muscularis externa",
+["myenteric plexus","myenteric"],
+6
+);
+}
+
+function flashCard2(){
+flashTemplate(
+"Name of ENS in the submucosa",
+["submucosal plexus","submucosal"],
+7
+);
+}
+
+function flashCard3(){
+flashTemplate(
+"Primary activity regulated by the myenteric plexus",
+["motility"],
+8
+);
+}
+
+function flashCard4(){
+flashTemplate(
+"Primary activity regulated by the submucosal plexus",
+[
+"secretion and local blood flow",
+"local blood flow and secretion",
+"secretion"
+],
+9
+);
+}
+
+function completed(){
+
+app.innerHTML=`
+
+<div class="card green center">
+
+<h1>🏆 Lesson Complete</h1>
+
+<p>
+You have mastered the basic structure and function
+of the ENS.
+</p>
+
+<p>
+Next lesson:
+Neuron Types of the ENS
+</p>
+
+</div>
+
+`;
 
 }
 
-}
-
-else{
-
-document.getElementById("feedback").innerHTML=
-'<p class="wrong">❌ Try again later.</p>';
-
-reviewQueue.push(activities[current]);
-
-setTimeout(nextActivity,1000);
-
-}
-
-}
-
-function checkRecall(){
-
-let user=document
-.getElementById("answerBox")
-.value
-.trim()
-.toLowerCase();
-
-let accepted=
-activities[current].accepted;
-
-if(accepted.includes(user)){
-
-document.getElementById("feedback").innerHTML=
-'<p class="correct">✅ Correct!</p>';
-
-setTimeout(nextActivity,1000);
-
-}
-
-else{
-
-document.getElementById("feedback").innerHTML=
-'<p class="wrong">❌ Incorrect.</p>';
-
-reviewQueue.push(activities[current]);
-
-setTimeout(nextActivity,1000);
-
-}
-
-}
-
-function nextActivity(){
-
-current++;
-
-showActivity();
-
-}
-
-showActivity();
+introPage();
 
 </script>
 
